@@ -1,0 +1,42 @@
+-- CUSTOMER DETAILS DATA MODEL
+WITH 
+user_details AS
+(SELECT
+  u.id AS user_id,
+  u.email,
+  u.age,
+  u.gender,
+  u.country,
+  u.traffic_source,
+  CAST(u.created_at AS DATE) AS account_created,
+  oi.order_id,
+  oi.product_id,
+  CAST(oi.created_at AS DATE) AS order_date,
+  oi.sale_price,
+FROM bigquery-public-data.thelook_ecommerce.users u
+LEFT JOIN bigquery-public-data.thelook_ecommerce.order_items oi
+ON u.id= oi.user_id
+)
+
+--PURCHASE BEHAVIOR DATA MODEL
+SELECT
+  user_id,
+  email,
+  age,
+  gender,
+  country,
+  traffic_source,
+  MIN(order_date) AS cohort_date,
+  MAX(order_date) AS latest_shopping_date,
+  DATE_DIFF (MAX(order_date),MIN(order_date),MONTH) AS lifespan_months,
+  ROUND (SUM(sale_price),2) AS LTV,
+  COUNT(DISTINCT order_id) AS purchase_frequency,
+  ROUND(SUM(sale_price)/COUNT(DISTINCT order_id),2) AS avg_order_value
+FROM user_details
+GROUP BY
+user_id,
+email,
+age,
+gender,
+country,
+traffic_source
